@@ -8,7 +8,7 @@ import (
 )
 
 func TestRouter(t *testing.T) {
-	r := setupRouter()
+	r := SetupRouter()
 
 	tests := []struct {
 		method   string
