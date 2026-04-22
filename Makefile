@@ -1,4 +1,4 @@
-.PHONY: run build test lint fmt clean
+.PHONY: run build test lint fmt clean tidy
 
 run:
 	go run ./cmd/api
@@ -23,3 +23,7 @@ clean:
 
 tidy:
 	go mod tidy
+
+.PHONY: ent-generate
+ent-generate:
+	go generate ./internal/infra/ent/...
