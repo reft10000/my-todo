@@ -1,4 +1,7 @@
-.PHONY: run build test lint fmt clean
+include .env
+export
+
+.PHONY: run build test lint fmt clean tidy
 
 run:
 	go run ./cmd/api
@@ -23,3 +26,14 @@ clean:
 
 tidy:
 	go mod tidy
+
+.PHONY: ent-generate
+ent-generate:
+	go generate ./internal/infra/ent/...
+
+.PHONY: atlas-diff atlas-apply
+atlas-diff:
+	atlas migrate diff --env local
+
+atlas-apply:
+	atlas migrate apply --env local
