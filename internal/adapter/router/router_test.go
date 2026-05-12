@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"my-todo/internal/adapter/handler"
 	"my-todo/internal/domain"
+	"my-todo/internal/usecase"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -16,6 +18,16 @@ type mockTodoUsecase struct{}
 
 func (m *mockTodoUsecase) Create(title string) (*domain.Todo, error) {
 	return domain.NewTodo(title)
+}
+
+func (m *mockTodoUsecase) List(ctx context.Context, input usecase.ListInput) (*domain.ListResult[domain.Todo], error) {
+	return &domain.ListResult[domain.Todo]{
+		Todos:   []domain.Todo{},
+		Total:   0,
+		Page:    input.Page,
+		Limit:   input.Limit,
+		HasNext: false,
+	}, nil
 }
 
 func TestRouter(t *testing.T) {
@@ -33,6 +45,7 @@ func TestRouter(t *testing.T) {
 		{"GET", "/health", "", "", 200, `{"status":"ok"}`},
 		{"POST", "/notfound", "", "", 404, ""},
 		{"POST", "/todos", `{"title":"test todo"}`, "application/json", 201, ""},
+		{"GET", "/todos?page=1&limit=20", "", "", 200, ""},
 	}
 
 	for _, tt := range tests {

@@ -31,3 +31,40 @@ func (r *TodoRepository) Create(todo *domain.Todo) error {
 	}
 	return nil
 }
+
+func (r *TodoRepository) List(ctx context.Context, params domain.ListParams) (domain.ListResult[domain.Todo], error) {
+	query := r.client.Todo.Query()
+
+	total, err := query.Count(ctx)
+	if err != nil {
+		return domain.ListResult[domain.Todo]{}, err
+	}
+
+	offset := (params.Pagination.Page - 1) * params.Pagination.Limit
+	todos, err := query.
+		Order(ent.Asc("created_at")).
+		Limit(params.Pagination.Limit).
+		Offset(offset).
+		All(ctx)
+	if err != nil {
+		return domain.ListResult[domain.Todo]{}, err
+	}
+
+	items := make([]domain.Todo, len(todos))
+	for i, t := range todos {
+		items[i] = domain.Todo{
+			ID:        t.ID,
+			Title:     t.Title,
+			Status:    domain.Status(t.Status),
+			CreatedAt: t.CreatedAt,
+		}
+	}
+
+	return domain.ListResult[domain.Todo]{
+		Todos:   items,
+		Total:   total,
+		Page:    params.Pagination.Page,
+		Limit:   params.Pagination.Limit,
+		HasNext: offset+len(todos) < total,
+	}, nil
+}
