@@ -16,5 +16,6 @@ func SetupRouter(todoHandler *handler.TodoHandler) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 	router.POST("/todos", todoHandler.Create)
+	router.GET("/todos", todoHandler.List)
 	return router
 }
