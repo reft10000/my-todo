@@ -14,6 +14,24 @@ func TestNewTodo(t *testing.T) {
 	assert.Equal(t, StatusPending, todo.Status)
 }
 
+func TestNewTodo_InvalidTitle(t *testing.T) {
+	tests := []struct {
+		name  string
+		title string
+	}{
+		{"空文字", ""},
+		{"スペースのみ", "   "},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			todo, err := NewTodo(tt.title)
+			assert.Nil(t, todo)
+			assert.ErrorIs(t, err, ErrInvalidTitle)
+		})
+	}
+}
+
 func TestIsValidTitle(t *testing.T) {
 	tests := []struct {
 		name  string
