@@ -45,6 +45,30 @@ func NewTodo(title string) (*Todo, error) {
 	}, nil
 }
 
+func (t *Todo) ChangeTitle(title string) error {
+	if !isValidTitle(title) {
+		return ErrInvalidTitle
+	}
+	t.Title = title
+	return nil
+}
+
+func (t *Todo) ChangeStatus(status Status) error {
+	if !status.isValid() {
+		return ErrInvalidStatus
+	}
+	t.Status = status
+	return nil
+}
+
+func (s Status) isValid() bool {
+	switch s {
+	case StatusPending, StatusInProgress, StatusDone:
+		return true
+	}
+	return false
+}
+
 func isValidTitle(title string) bool {
 	return strings.TrimSpace(title) != "" && utf8.RuneCountInString(title) <= MaxTitleLength
 }

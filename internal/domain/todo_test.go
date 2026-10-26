@@ -52,3 +52,62 @@ func TestIsValidTitle(t *testing.T) {
 		})
 	}
 }
+
+func TestTodo_ChangeTitle(t *testing.T) {
+	tests := []struct {
+		name      string
+		title     string
+		wantErr   error
+		wantTitle string
+	}{
+		{"正常系", "掃除", nil, "掃除"},
+		{"空文字", "", ErrInvalidTitle, "買い物"},
+		{"スペースのみ", "   ", ErrInvalidTitle, "買い物"},
+		{"256文字", strings.Repeat("あ", 256), ErrInvalidTitle, "買い物"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			todo, err := NewTodo("買い物")
+			assert.NoError(t, err)
+
+			err = todo.ChangeTitle(tt.title)
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.wantTitle, todo.Title)
+		})
+	}
+}
+
+func TestTodo_ChangeStatus(t *testing.T) {
+	tests := []struct {
+		name       string
+		status     Status
+		wantErr    error
+		wantStatus Status
+	}{
+		{"pending", StatusPending, nil, StatusPending},
+		{"in_progress", StatusInProgress, nil, StatusInProgress},
+		{"done", StatusDone, nil, StatusDone},
+		{"不正な値", Status("foo"), ErrInvalidStatus, StatusPending},
+		{"空文字", Status(""), ErrInvalidStatus, StatusPending},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			todo, err := NewTodo("買い物")
+			assert.NoError(t, err)
+
+			err = todo.ChangeStatus(tt.status)
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.wantStatus, todo.Status)
+		})
+	}
+}
