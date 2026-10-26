@@ -2,6 +2,7 @@ package middleware_test
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,6 +21,8 @@ func TestErrorHandler(t *testing.T) {
 		wantCode int
 	}{
 		{"AppError 400", domain.ErrBadRequest, 400},
+		{"AppErrorのCodeを使う", &domain.AppError{Code: http.StatusNotFound, Message: "not found"}, 404},
+		{"wrapされたAppError", fmt.Errorf("wrap: %w", domain.ErrInvalidTitle), 400},
 		{"unknown error", errors.New("unknown"), 500},
 	}
 
@@ -39,4 +42,18 @@ func TestErrorHandler(t *testing.T) {
 			assert.Equal(t, tt.wantCode, w.Code)
 		})
 	}
+}
+
+func TestErrorHandler_DoesNotMutateDomainErrors(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(middleware.ErrorHandler())
+	r.GET("/test", func(c *gin.Context) {
+		c.Error(domain.ErrBadRequest)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	r.ServeHTTP(httptest.NewRecorder(), req)
+
+	assert.Equal(t, "invalid title", domain.ErrInvalidTitle.Message)
 }
