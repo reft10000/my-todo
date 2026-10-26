@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"my-todo/internal/domain"
 	"my-todo/internal/infra/ent"
@@ -88,7 +87,17 @@ func (r *TodoRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain.To
 	}, nil
 }
 
-// TODO: 仮実装。repositoryのテスト追加時に実装する
 func (r *TodoRepository) Update(ctx context.Context, todo *domain.Todo) error {
-	return errors.New("not implemented")
+	_, err := r.client.Todo.
+		UpdateOneID(todo.ID).
+		SetTitle(todo.Title).
+		SetStatus(ent_todo.Status(todo.Status)).
+		Save(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return domain.ErrNotFound
+		}
+		return fmt.Errorf("failed to update todo: %w", err)
+	}
+	return nil
 }

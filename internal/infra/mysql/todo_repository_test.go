@@ -71,3 +71,34 @@ func TestTodoRepository_FindByID(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrNotFound)
 	})
 }
+
+func TestTodoRepository_Update(t *testing.T) {
+	client := SetupTestDB(t)
+	repo := mysql.NewTodoRepository(client)
+	ctx := context.Background()
+
+	todo, err := domain.NewTodo("買い物")
+	require.NoError(t, err)
+	require.NoError(t, repo.Create(todo))
+
+	t.Run("正常系", func(t *testing.T) {
+		require.NoError(t, todo.ChangeTitle("掃除"))
+		require.NoError(t, todo.ChangeStatus(domain.StatusDone))
+
+		err := repo.Update(ctx, todo)
+		require.NoError(t, err)
+
+		got, err := repo.FindByID(ctx, todo.ID)
+		require.NoError(t, err)
+		assert.Equal(t, "掃除", got.Title)
+		assert.Equal(t, domain.StatusDone, got.Status)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		notExist, err := domain.NewTodo("存在しない")
+		require.NoError(t, err)
+
+		err = repo.Update(ctx, notExist)
+		assert.ErrorIs(t, err, domain.ErrNotFound)
+	})
+}
