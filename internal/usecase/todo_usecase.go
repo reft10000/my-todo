@@ -55,3 +55,35 @@ func (u *TodoUsecase) Get(ctx context.Context, id uuid.UUID) (*domain.Todo, erro
 	}
 	return todo, nil
 }
+
+type UpdateInput struct {
+	Title  *string
+	Status *string
+}
+
+func (u *TodoUsecase) Update(ctx context.Context, id uuid.UUID, input UpdateInput) (*domain.Todo, error) {
+	if input.Title == nil && input.Status == nil {
+		return nil, domain.ErrBadRequest
+	}
+
+	todo, err := u.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get todo: %w", err)
+	}
+
+	if input.Title != nil {
+		if err := todo.ChangeTitle(*input.Title); err != nil {
+			return nil, err
+		}
+	}
+	if input.Status != nil {
+		if err := todo.ChangeStatus(domain.Status(*input.Status)); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := u.repo.Update(ctx, todo); err != nil {
+		return nil, fmt.Errorf("failed to update todo: %w", err)
+	}
+	return todo, nil
+}
