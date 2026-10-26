@@ -36,7 +36,7 @@ type ListResult[t Todo] struct {
 }
 
 type TodoRepository interface {
-	Create(todo *Todo) error
+	Create(ctx context.Context, todo *Todo) error
 	List(ctx context.Context, params ListParams) (ListResult[Todo], error)
 	FindByID(ctx context.Context, id uuid.UUID) (*Todo, error)
 	Update(ctx context.Context, todo *Todo) error

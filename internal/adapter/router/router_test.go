@@ -17,7 +17,7 @@ import (
 
 type mockTodoUsecase struct{}
 
-func (m *mockTodoUsecase) Create(title string) (*domain.Todo, error) {
+func (m *mockTodoUsecase) Create(ctx context.Context, title string) (*domain.Todo, error) {
 	return domain.NewTodo(title)
 }
 
