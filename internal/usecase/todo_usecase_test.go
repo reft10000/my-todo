@@ -8,12 +8,14 @@ import (
 	"my-todo/internal/domain"
 	"my-todo/internal/usecase"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 type mockTodoRepository struct {
-	CreateFunc func(todo *domain.Todo) error
-	ListFunc   func(ctx context.Context, params domain.ListParams) (domain.ListResult[domain.Todo], error)
+	CreateFunc   func(todo *domain.Todo) error
+	ListFunc     func(ctx context.Context, params domain.ListParams) (domain.ListResult[domain.Todo], error)
+	FindByIDFunc func(ctx context.Context, id uuid.UUID) (*domain.Todo, error)
 }
 
 func (m *mockTodoRepository) Create(todo *domain.Todo) error {
@@ -22,6 +24,10 @@ func (m *mockTodoRepository) Create(todo *domain.Todo) error {
 
 func (m *mockTodoRepository) List(ctx context.Context, params domain.ListParams) (domain.ListResult[domain.Todo], error) {
 	return m.ListFunc(ctx, params)
+}
+
+func (m *mockTodoRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain.Todo, error) {
+	return m.FindByIDFunc(ctx, id)
 }
 
 func TestTodoUsecase_Create(t *testing.T) {
@@ -102,6 +108,46 @@ func TestTodoUsecase_List(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.mock.Total, result.Total)
 				assert.Equal(t, len(tt.mock.Todos), len(result.Todos))
+			}
+		})
+	}
+}
+
+func TestTodoUsecase_Get(t *testing.T) {
+	id := uuid.New()
+	found := &domain.Todo{ID: id, Title: "買い物", Status: domain.StatusPending}
+
+	tests := []struct {
+		name     string
+		mock     *domain.Todo
+		repoErr  error
+		wantErr  error
+		wantTodo *domain.Todo
+	}{
+		{"正常系", found, nil, nil, found},
+		{"not found", nil, domain.ErrNotFound, domain.ErrNotFound, nil},
+		{"DB error", nil, errors.New("db error"), errors.New("db error"), nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &mockTodoRepository{
+				FindByIDFunc: func(ctx context.Context, gotID uuid.UUID) (*domain.Todo, error) {
+					assert.Equal(t, id, gotID)
+					return tt.mock, tt.repoErr
+				},
+			}
+			uc := usecase.NewTodoUsecase(repo)
+			todo, err := uc.Get(context.Background(), id)
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.Nil(t, todo)
+				if errors.Is(tt.wantErr, domain.ErrNotFound) {
+					assert.ErrorIs(t, err, domain.ErrNotFound)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.wantTodo, todo)
 			}
 		})
 	}

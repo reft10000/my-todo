@@ -1,6 +1,10 @@
 package domain
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type ListParams struct {
 	Pagination PaginationParams
@@ -34,4 +38,5 @@ type ListResult[t Todo] struct {
 type TodoRepository interface {
 	Create(todo *Todo) error
 	List(ctx context.Context, params ListParams) (ListResult[Todo], error)
+	FindByID(ctx context.Context, id uuid.UUID) (*Todo, error)
 }

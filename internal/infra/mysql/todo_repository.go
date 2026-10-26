@@ -2,10 +2,13 @@ package mysql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"my-todo/internal/domain"
 	"my-todo/internal/infra/ent"
 	ent_todo "my-todo/internal/infra/ent/todo"
+
+	"github.com/google/uuid"
 )
 
 var _ domain.TodoRepository = (*TodoRepository)(nil)
@@ -67,4 +70,9 @@ func (r *TodoRepository) List(ctx context.Context, params domain.ListParams) (do
 		Limit:   params.Pagination.Limit,
 		HasNext: offset+len(todos) < total,
 	}, nil
+}
+
+// TODO: 仮実装。repositoryのテスト追加時に実装する
+func (r *TodoRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain.Todo, error) {
+	return nil, errors.New("not implemented")
 }
