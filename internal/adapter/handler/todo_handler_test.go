@@ -101,6 +101,14 @@ func TestTodoHandler_List(t *testing.T) {
 			wantStatus: 0,
 		},
 		{
+			name:       "limitが上限超過",
+			query:      "?page=1&limit=101",
+			mockResult: nil,
+			mockErr:    nil,
+			wantErr:    true,
+			wantStatus: 0,
+		},
+		{
 			name:       "DB error",
 			query:      "?page=1&limit=20",
 			mockResult: nil,
