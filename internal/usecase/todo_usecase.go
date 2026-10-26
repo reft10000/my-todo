@@ -87,3 +87,10 @@ func (u *TodoUsecase) Update(ctx context.Context, id uuid.UUID, input UpdateInpu
 	}
 	return todo, nil
 }
+
+func (u *TodoUsecase) Delete(ctx context.Context, id uuid.UUID) error {
+	if err := u.repo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("failed to delete todo: %w", err)
+	}
+	return nil
+}

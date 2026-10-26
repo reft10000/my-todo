@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"my-todo/internal/domain"
 	"my-todo/internal/infra/ent"
@@ -100,4 +101,9 @@ func (r *TodoRepository) Update(ctx context.Context, todo *domain.Todo) error {
 		return fmt.Errorf("failed to update todo: %w", err)
 	}
 	return nil
+}
+
+// TODO: 仮実装。repositoryのテスト追加時に実装する
+func (r *TodoRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return errors.New("not implemented")
 }

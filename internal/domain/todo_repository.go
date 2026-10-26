@@ -40,4 +40,5 @@ type TodoRepository interface {
 	List(ctx context.Context, params ListParams) (ListResult[Todo], error)
 	FindByID(ctx context.Context, id uuid.UUID) (*Todo, error)
 	Update(ctx context.Context, todo *Todo) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
