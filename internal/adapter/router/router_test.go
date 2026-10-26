@@ -35,6 +35,14 @@ func (m *mockTodoUsecase) Get(ctx context.Context, id uuid.UUID) (*domain.Todo, 
 	return &domain.Todo{ID: id, Title: "test todo", Status: domain.StatusPending}, nil
 }
 
+func (m *mockTodoUsecase) Update(ctx context.Context, id uuid.UUID, input usecase.UpdateInput) (*domain.Todo, error) {
+	todo := &domain.Todo{ID: id, Title: "test todo", Status: domain.StatusPending}
+	if input.Status != nil {
+		todo.Status = domain.Status(*input.Status)
+	}
+	return todo, nil
+}
+
 func TestRouter(t *testing.T) {
 	h := handler.NewTodoHandler(&mockTodoUsecase{})
 	r := SetupRouter(h)
