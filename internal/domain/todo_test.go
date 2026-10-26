@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,6 +24,8 @@ func TestIsValidTitle(t *testing.T) {
 		{"正常系", "買い物", true},
 		{"空文字", "", false},
 		{"スペースのみ", "   ", false},
+		{"255文字", strings.Repeat("あ", 255), true},
+		{"256文字", strings.Repeat("あ", 256), false},
 	}
 
 	for _, tt := range tests {

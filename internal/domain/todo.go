@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -15,6 +16,9 @@ const (
 	StatusInProgress Status = "in_progress"
 	StatusDone       Status = "done"
 )
+
+// MaxTitleLength はDBの title カラム (varchar(255)) に合わせた文字数上限
+const MaxTitleLength = 255
 
 type Todo struct {
 	ID        uuid.UUID
@@ -42,5 +46,5 @@ func NewTodo(title string) (*Todo, error) {
 }
 
 func isValidTitle(title string) bool {
-	return strings.TrimSpace(title) != ""
+	return strings.TrimSpace(title) != "" && utf8.RuneCountInString(title) <= MaxTitleLength
 }
