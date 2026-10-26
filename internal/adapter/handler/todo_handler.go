@@ -11,6 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// maxListLimit は一覧取得で1ページに返す件数の上限
+const maxListLimit = 100
+
 type TodoUsecaseInterface interface {
 	Create(title string) (*domain.Todo, error)
 	List(ctx context.Context, input usecase.ListInput) (*domain.ListResult[domain.Todo], error)
@@ -68,7 +71,7 @@ func (h *TodoHandler) List(c *gin.Context) {
 		return
 	}
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	if err != nil || limit < 1 {
+	if err != nil || limit < 1 || limit > maxListLimit {
 		c.Error(domain.ErrBadRequest)
 		return
 	}
