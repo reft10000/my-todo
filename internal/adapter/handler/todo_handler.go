@@ -20,6 +20,7 @@ type TodoUsecaseInterface interface {
 	List(ctx context.Context, input usecase.ListInput) (*domain.ListResult[domain.Todo], error)
 	Get(ctx context.Context, id uuid.UUID) (*domain.Todo, error)
 	Update(ctx context.Context, id uuid.UUID, input usecase.UpdateInput) (*domain.Todo, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type TodoHandler struct {
@@ -158,4 +159,19 @@ func (h *TodoHandler) Update(c *gin.Context) {
 		Title:  todo.Title,
 		Status: string(todo.Status),
 	})
+}
+
+func (h *TodoHandler) Delete(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.Error(domain.ErrBadRequest)
+		return
+	}
+
+	if err := h.usecase.Delete(c.Request.Context(), id); err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

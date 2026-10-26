@@ -102,3 +102,27 @@ func TestTodoRepository_Update(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrNotFound)
 	})
 }
+
+func TestTodoRepository_Delete(t *testing.T) {
+	client := SetupTestDB(t)
+	repo := mysql.NewTodoRepository(client)
+	ctx := context.Background()
+
+	todo, err := domain.NewTodo("買い物")
+	require.NoError(t, err)
+	require.NoError(t, repo.Create(todo))
+
+	t.Run("正常系", func(t *testing.T) {
+		err := repo.Delete(ctx, todo.ID)
+		require.NoError(t, err)
+
+		got, err := repo.FindByID(ctx, todo.ID)
+		assert.Nil(t, got)
+		assert.ErrorIs(t, err, domain.ErrNotFound)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		err := repo.Delete(ctx, uuid.New())
+		assert.ErrorIs(t, err, domain.ErrNotFound)
+	})
+}

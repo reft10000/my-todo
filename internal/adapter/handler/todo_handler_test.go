@@ -333,3 +333,69 @@ func TestTodoHandler_Update(t *testing.T) {
 		})
 	}
 }
+
+func (m *mockTodoUsecase) Delete(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func TestTodoHandler_Delete(t *testing.T) {
+	id := uuid.New()
+
+	tests := []struct {
+		name       string
+		paramID    string
+		callUc     bool
+		mockErr    error
+		wantErr    error
+		wantStatus int
+	}{
+		{
+			name:       "正常系",
+			paramID:    id.String(),
+			callUc:     true,
+			wantStatus: http.StatusNoContent,
+		},
+		{
+			name:    "idが不正",
+			paramID: "abc",
+			callUc:  false,
+			wantErr: domain.ErrBadRequest,
+		},
+		{
+			name:    "not found",
+			paramID: id.String(),
+			callUc:  true,
+			mockErr: domain.ErrNotFound,
+			wantErr: domain.ErrNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest("DELETE", "/todos/"+tt.paramID, nil)
+			c.Params = gin.Params{{Key: "id", Value: tt.paramID}}
+
+			mockUc := new(mockTodoUsecase)
+			if tt.callUc {
+				mockUc.On("Delete", mock.Anything, id).Return(tt.mockErr)
+			}
+
+			h := handler.NewTodoHandler(mockUc)
+			h.Delete(c)
+
+			mockUc.AssertExpectations(t)
+			if tt.wantErr != nil {
+				assert.True(t, c.Errors.Last() != nil)
+				assert.ErrorIs(t, c.Errors.Last().Err, tt.wantErr)
+				return
+			}
+
+			assert.Nil(t, c.Errors.Last())
+			assert.Equal(t, tt.wantStatus, c.Writer.Status())
+			assert.Empty(t, rec.Body.String())
+		})
+	}
+}

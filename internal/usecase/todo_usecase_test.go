@@ -17,6 +17,11 @@ type mockTodoRepository struct {
 	ListFunc     func(ctx context.Context, params domain.ListParams) (domain.ListResult[domain.Todo], error)
 	FindByIDFunc func(ctx context.Context, id uuid.UUID) (*domain.Todo, error)
 	UpdateFunc   func(ctx context.Context, todo *domain.Todo) error
+	DeleteFunc   func(ctx context.Context, id uuid.UUID) error
+}
+
+func (m *mockTodoRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return m.DeleteFunc(ctx, id)
 }
 
 func (m *mockTodoRepository) Update(ctx context.Context, todo *domain.Todo) error {
@@ -256,6 +261,41 @@ func TestTodoUsecase_Update(t *testing.T) {
 			assert.Equal(t, id, todo.ID)
 			assert.Equal(t, tt.wantTitle, todo.Title)
 			assert.Equal(t, tt.wantStatus, todo.Status)
+		})
+	}
+}
+
+func TestTodoUsecase_Delete(t *testing.T) {
+	id := uuid.New()
+
+	tests := []struct {
+		name    string
+		repoErr error
+		wantErr error
+	}{
+		{"正常系", nil, nil},
+		{"not found", domain.ErrNotFound, domain.ErrNotFound},
+		{"DB error", errors.New("db error"), errors.New("db error")},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &mockTodoRepository{
+				DeleteFunc: func(ctx context.Context, gotID uuid.UUID) error {
+					assert.Equal(t, id, gotID)
+					return tt.repoErr
+				},
+			}
+			uc := usecase.NewTodoUsecase(repo)
+			err := uc.Delete(context.Background(), id)
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				if errors.Is(tt.wantErr, domain.ErrNotFound) {
+					assert.ErrorIs(t, err, domain.ErrNotFound)
+				}
+				return
+			}
+			assert.NoError(t, err)
 		})
 	}
 }

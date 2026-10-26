@@ -101,3 +101,13 @@ func (r *TodoRepository) Update(ctx context.Context, todo *domain.Todo) error {
 	}
 	return nil
 }
+
+func (r *TodoRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	if err := r.client.Todo.DeleteOneID(id).Exec(ctx); err != nil {
+		if ent.IsNotFound(err) {
+			return domain.ErrNotFound
+		}
+		return fmt.Errorf("failed to delete todo: %w", err)
+	}
+	return nil
+}
