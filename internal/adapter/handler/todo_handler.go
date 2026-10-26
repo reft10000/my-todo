@@ -9,6 +9,7 @@ import (
 	"my-todo/internal/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // maxListLimit は一覧取得で1ページに返す件数の上限
@@ -17,6 +18,7 @@ const maxListLimit = 100
 type TodoUsecaseInterface interface {
 	Create(title string) (*domain.Todo, error)
 	List(ctx context.Context, input usecase.ListInput) (*domain.ListResult[domain.Todo], error)
+	Get(ctx context.Context, id uuid.UUID) (*domain.Todo, error)
 }
 
 type TodoHandler struct {
@@ -100,5 +102,25 @@ func (h *TodoHandler) List(c *gin.Context) {
 		Page:    result.Page,
 		Limit:   result.Limit,
 		HasNext: result.HasNext,
+	})
+}
+
+func (h *TodoHandler) Get(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.Error(domain.ErrBadRequest)
+		return
+	}
+
+	todo, err := h.usecase.Get(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, createTodoResponse{
+		ID:     todo.ID.String(),
+		Title:  todo.Title,
+		Status: string(todo.Status),
 	})
 }
