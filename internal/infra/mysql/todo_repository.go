@@ -86,3 +86,18 @@ func (r *TodoRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain.To
 		CreatedAt: t.CreatedAt,
 	}, nil
 }
+
+func (r *TodoRepository) Update(ctx context.Context, todo *domain.Todo) error {
+	_, err := r.client.Todo.
+		UpdateOneID(todo.ID).
+		SetTitle(todo.Title).
+		SetStatus(ent_todo.Status(todo.Status)).
+		Save(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return domain.ErrNotFound
+		}
+		return fmt.Errorf("failed to update todo: %w", err)
+	}
+	return nil
+}

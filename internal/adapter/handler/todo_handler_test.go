@@ -238,3 +238,98 @@ func TestTodoHandler_Get(t *testing.T) {
 		})
 	}
 }
+
+func (m *mockTodoUsecase) Update(ctx context.Context, id uuid.UUID, input usecase.UpdateInput) (*domain.Todo, error) {
+	args := m.Called(ctx, id, input)
+
+	var todo *domain.Todo
+	if args.Get(0) != nil {
+		todo = args.Get(0).(*domain.Todo)
+	}
+	return todo, args.Error(1)
+}
+
+func TestTodoHandler_Update(t *testing.T) {
+	id := uuid.New()
+	title := "掃除"
+	status := "done"
+	updated := &domain.Todo{ID: id, Title: title, Status: domain.StatusDone}
+
+	tests := []struct {
+		name       string
+		paramID    string
+		body       string
+		callUc     bool
+		input      usecase.UpdateInput
+		mockResult *domain.Todo
+		mockErr    error
+		wantErr    error
+		wantStatus int
+	}{
+		{
+			name:       "正常系",
+			paramID:    id.String(),
+			body:       `{"title":"掃除","status":"done"}`,
+			callUc:     true,
+			input:      usecase.UpdateInput{Title: &title, Status: &status},
+			mockResult: updated,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:    "idが不正",
+			paramID: "abc",
+			body:    `{"title":"掃除"}`,
+			callUc:  false,
+			wantErr: domain.ErrBadRequest,
+		},
+		{
+			name:    "JSONが不正",
+			paramID: id.String(),
+			body:    `{"title":`,
+			callUc:  false,
+			wantErr: domain.ErrBadRequest,
+		},
+		{
+			name:    "not found",
+			paramID: id.String(),
+			body:    `{"status":"done"}`,
+			callUc:  true,
+			input:   usecase.UpdateInput{Status: &status},
+			mockErr: domain.ErrNotFound,
+			wantErr: domain.ErrNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest("PATCH", "/todos/"+tt.paramID, strings.NewReader(tt.body))
+			c.Request.Header.Set("Content-Type", "application/json")
+			c.Params = gin.Params{{Key: "id", Value: tt.paramID}}
+
+			mockUc := new(mockTodoUsecase)
+			if tt.callUc {
+				mockUc.On("Update", mock.Anything, id, tt.input).Return(tt.mockResult, tt.mockErr)
+			}
+
+			h := handler.NewTodoHandler(mockUc)
+			h.Update(c)
+
+			mockUc.AssertExpectations(t)
+			if tt.wantErr != nil {
+				assert.True(t, c.Errors.Last() != nil)
+				assert.ErrorIs(t, c.Errors.Last().Err, tt.wantErr)
+				return
+			}
+
+			assert.Nil(t, c.Errors.Last())
+			assert.Equal(t, tt.wantStatus, rec.Code)
+			var body map[string]string
+			assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+			assert.Equal(t, id.String(), body["id"])
+			assert.Equal(t, "掃除", body["title"])
+			assert.Equal(t, "done", body["status"])
+		})
+	}
+}

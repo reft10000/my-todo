@@ -19,6 +19,7 @@ type TodoUsecaseInterface interface {
 	Create(title string) (*domain.Todo, error)
 	List(ctx context.Context, input usecase.ListInput) (*domain.ListResult[domain.Todo], error)
 	Get(ctx context.Context, id uuid.UUID) (*domain.Todo, error)
+	Update(ctx context.Context, id uuid.UUID, input usecase.UpdateInput) (*domain.Todo, error)
 }
 
 type TodoHandler struct {
@@ -31,6 +32,11 @@ func NewTodoHandler(uc TodoUsecaseInterface) *TodoHandler {
 
 type createTodoRequest struct {
 	Title string `json:"title" binding:"required"`
+}
+
+type updateTodoRequest struct {
+	Title  *string `json:"title"`
+	Status *string `json:"status"`
 }
 
 type createTodoResponse struct {
@@ -113,6 +119,35 @@ func (h *TodoHandler) Get(c *gin.Context) {
 	}
 
 	todo, err := h.usecase.Get(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, createTodoResponse{
+		ID:     todo.ID.String(),
+		Title:  todo.Title,
+		Status: string(todo.Status),
+	})
+}
+
+func (h *TodoHandler) Update(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.Error(domain.ErrBadRequest)
+		return
+	}
+
+	var req updateTodoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(domain.ErrBadRequest)
+		return
+	}
+
+	todo, err := h.usecase.Update(c.Request.Context(), id, usecase.UpdateInput{
+		Title:  req.Title,
+		Status: req.Status,
+	})
 	if err != nil {
 		c.Error(err)
 		return
