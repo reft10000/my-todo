@@ -25,7 +25,7 @@ type Todo struct {
 
 func NewTodo(title string) (*Todo, error) {
 	if !isValidTitle(title) {
-		return nil, errors.New("title is required")
+		return nil, ErrInvalidTitle
 	}
 
 	id, err := uuid.NewV7()
