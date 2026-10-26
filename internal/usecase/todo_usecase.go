@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"my-todo/internal/domain"
+
+	"github.com/google/uuid"
 )
 
 type TodoUsecase struct {
@@ -44,4 +46,12 @@ func (u *TodoUsecase) List(ctx context.Context, input ListInput) (*domain.ListRe
 	}
 
 	return &result, nil
+}
+
+func (u *TodoUsecase) Get(ctx context.Context, id uuid.UUID) (*domain.Todo, error) {
+	todo, err := u.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get todo: %w", err)
+	}
+	return todo, nil
 }

@@ -2,6 +2,7 @@ package handler_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,7 @@ import (
 	"my-todo/internal/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -137,6 +139,102 @@ func TestTodoHandler_List(t *testing.T) {
 				assert.Nil(t, c.Errors.Last())
 				assert.Equal(t, tt.wantStatus, rec.Code)
 			}
+		})
+	}
+}
+
+func (m *mockTodoUsecase) Get(ctx context.Context, id uuid.UUID) (*domain.Todo, error) {
+	args := m.Called(ctx, id)
+
+	var todo *domain.Todo
+	if args.Get(0) != nil {
+		todo = args.Get(0).(*domain.Todo)
+	}
+	return todo, args.Error(1)
+}
+
+func TestTodoHandler_Get(t *testing.T) {
+	id := uuid.New()
+	found := &domain.Todo{ID: id, Title: "買い物", Status: domain.StatusPending}
+
+	tests := []struct {
+		name       string
+		paramID    string
+		callUc     bool
+		mockResult *domain.Todo
+		mockErr    error
+		wantErr    error
+		wantStatus int
+	}{
+		{
+			name:       "正常系",
+			paramID:    id.String(),
+			callUc:     true,
+			mockResult: found,
+			mockErr:    nil,
+			wantErr:    nil,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "idが不正",
+			paramID:    "abc",
+			callUc:     false,
+			mockResult: nil,
+			mockErr:    nil,
+			wantErr:    domain.ErrBadRequest,
+			wantStatus: 0,
+		},
+		{
+			name:       "not found",
+			paramID:    id.String(),
+			callUc:     true,
+			mockResult: nil,
+			mockErr:    domain.ErrNotFound,
+			wantErr:    domain.ErrNotFound,
+			wantStatus: 0,
+		},
+		{
+			name:       "DB error",
+			paramID:    id.String(),
+			callUc:     true,
+			mockResult: nil,
+			mockErr:    errors.New("db error"),
+			wantErr:    errors.New("db error"),
+			wantStatus: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest("GET", "/todos/"+tt.paramID, nil)
+			c.Params = gin.Params{{Key: "id", Value: tt.paramID}}
+
+			mockUc := new(mockTodoUsecase)
+			if tt.callUc {
+				mockUc.On("Get", mock.Anything, id).Return(tt.mockResult, tt.mockErr)
+			}
+
+			h := handler.NewTodoHandler(mockUc)
+			h.Get(c)
+
+			mockUc.AssertExpectations(t)
+			if tt.wantErr != nil {
+				assert.True(t, c.Errors.Last() != nil)
+				if errors.Is(tt.wantErr, domain.ErrBadRequest) || errors.Is(tt.wantErr, domain.ErrNotFound) {
+					assert.ErrorIs(t, c.Errors.Last().Err, tt.wantErr)
+				}
+				return
+			}
+
+			assert.Nil(t, c.Errors.Last())
+			assert.Equal(t, tt.wantStatus, rec.Code)
+			var body map[string]string
+			assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+			assert.Equal(t, id.String(), body["id"])
+			assert.Equal(t, "買い物", body["title"])
+			assert.Equal(t, "pending", body["status"])
 		})
 	}
 }

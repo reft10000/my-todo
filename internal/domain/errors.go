@@ -12,4 +12,5 @@ func (e *AppError) Error() string { return e.Message }
 var (
 	ErrInvalidTitle = &AppError{Code: http.StatusBadRequest, Message: "invalid title"}
 	ErrBadRequest   = &AppError{Code: http.StatusBadRequest, Message: "bad request"}
+	ErrNotFound     = &AppError{Code: http.StatusNotFound, Message: "todo not found"}
 )

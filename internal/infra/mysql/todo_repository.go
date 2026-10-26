@@ -6,6 +6,8 @@ import (
 	"my-todo/internal/domain"
 	"my-todo/internal/infra/ent"
 	ent_todo "my-todo/internal/infra/ent/todo"
+
+	"github.com/google/uuid"
 )
 
 var _ domain.TodoRepository = (*TodoRepository)(nil)
@@ -66,5 +68,21 @@ func (r *TodoRepository) List(ctx context.Context, params domain.ListParams) (do
 		Page:    params.Pagination.Page,
 		Limit:   params.Pagination.Limit,
 		HasNext: offset+len(todos) < total,
+	}, nil
+}
+
+func (r *TodoRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain.Todo, error) {
+	t, err := r.client.Todo.Get(ctx, id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, domain.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to find todo: %w", err)
+	}
+	return &domain.Todo{
+		ID:        t.ID,
+		Title:     t.Title,
+		Status:    domain.Status(t.Status),
+		CreatedAt: t.CreatedAt,
 	}, nil
 }

@@ -11,6 +11,7 @@ import (
 	"my-todo/internal/domain"
 	"my-todo/internal/usecase"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,6 +31,10 @@ func (m *mockTodoUsecase) List(ctx context.Context, input usecase.ListInput) (*d
 	}, nil
 }
 
+func (m *mockTodoUsecase) Get(ctx context.Context, id uuid.UUID) (*domain.Todo, error) {
+	return &domain.Todo{ID: id, Title: "test todo", Status: domain.StatusPending}, nil
+}
+
 func TestRouter(t *testing.T) {
 	h := handler.NewTodoHandler(&mockTodoUsecase{})
 	r := SetupRouter(h)
@@ -46,6 +51,8 @@ func TestRouter(t *testing.T) {
 		{"POST", "/notfound", "", "", 404, ""},
 		{"POST", "/todos", `{"title":"test todo"}`, "application/json", 201, ""},
 		{"GET", "/todos?page=1&limit=20", "", "", 200, ""},
+		{"GET", "/todos/0195f3a0-0000-7000-8000-000000000000", "", "", 200, ""},
+		{"GET", "/todos/abc", "", "", 400, `{"error":"bad request"}`},
 	}
 
 	for _, tt := range tests {
