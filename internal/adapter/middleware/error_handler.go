@@ -17,10 +17,11 @@ func ErrorHandler() gin.HandlerFunc {
 		}
 
 		err := c.Errors.Last().Err
-		if errors.As(err, &domain.ErrInvalidTitle) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		var appErr *domain.AppError
+		if errors.As(err, &appErr) {
+			c.JSON(appErr.Code, gin.H{"error": appErr.Message})
 			return
 		}
-		c.JSON(500, gin.H{"error": "internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 	}
 }
