@@ -51,6 +51,8 @@ func TestRouter(t *testing.T) {
 		{"POST", "/notfound", "", "", 404, ""},
 		{"POST", "/todos", `{"title":"test todo"}`, "application/json", 201, ""},
 		{"GET", "/todos?page=1&limit=20", "", "", 200, ""},
+		{"GET", "/todos/0195f3a0-0000-7000-8000-000000000000", "", "", 200, ""},
+		{"GET", "/todos/abc", "", "", 400, `{"error":"bad request"}`},
 	}
 
 	for _, tt := range tests {

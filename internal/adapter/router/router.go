@@ -17,5 +17,6 @@ func SetupRouter(todoHandler *handler.TodoHandler) *gin.Engine {
 	})
 	router.POST("/todos", todoHandler.Create)
 	router.GET("/todos", todoHandler.List)
+	router.GET("/todos/:id", todoHandler.Get)
 	return router
 }
