@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"my-todo/internal/domain"
 	"my-todo/internal/infra/ent"
@@ -72,7 +71,18 @@ func (r *TodoRepository) List(ctx context.Context, params domain.ListParams) (do
 	}, nil
 }
 
-// TODO: 仮実装。repositoryのテスト追加時に実装する
 func (r *TodoRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain.Todo, error) {
-	return nil, errors.New("not implemented")
+	t, err := r.client.Todo.Get(ctx, id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, domain.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to find todo: %w", err)
+	}
+	return &domain.Todo{
+		ID:        t.ID,
+		Title:     t.Title,
+		Status:    domain.Status(t.Status),
+		CreatedAt: t.CreatedAt,
+	}, nil
 }
