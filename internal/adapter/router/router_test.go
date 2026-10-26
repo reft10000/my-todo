@@ -43,6 +43,10 @@ func (m *mockTodoUsecase) Update(ctx context.Context, id uuid.UUID, input usecas
 	return todo, nil
 }
 
+func (m *mockTodoUsecase) Delete(ctx context.Context, id uuid.UUID) error {
+	return nil
+}
+
 func TestRouter(t *testing.T) {
 	h := handler.NewTodoHandler(&mockTodoUsecase{})
 	r := SetupRouter(h)
