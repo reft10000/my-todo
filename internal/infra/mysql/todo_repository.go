@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"my-todo/internal/domain"
 	"my-todo/internal/infra/ent"
@@ -103,7 +102,12 @@ func (r *TodoRepository) Update(ctx context.Context, todo *domain.Todo) error {
 	return nil
 }
 
-// TODO: 仮実装。repositoryのテスト追加時に実装する
 func (r *TodoRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return errors.New("not implemented")
+	if err := r.client.Todo.DeleteOneID(id).Exec(ctx); err != nil {
+		if ent.IsNotFound(err) {
+			return domain.ErrNotFound
+		}
+		return fmt.Errorf("failed to delete todo: %w", err)
+	}
+	return nil
 }
