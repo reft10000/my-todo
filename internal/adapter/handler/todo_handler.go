@@ -16,7 +16,7 @@ import (
 const maxListLimit = 100
 
 type TodoUsecaseInterface interface {
-	Create(title string) (*domain.Todo, error)
+	Create(ctx context.Context, title string) (*domain.Todo, error)
 	List(ctx context.Context, input usecase.ListInput) (*domain.ListResult[domain.Todo], error)
 	Get(ctx context.Context, id uuid.UUID) (*domain.Todo, error)
 	Update(ctx context.Context, id uuid.UUID, input usecase.UpdateInput) (*domain.Todo, error)
@@ -60,7 +60,7 @@ func (h *TodoHandler) Create(c *gin.Context) {
 		c.Error(domain.ErrBadRequest)
 		return
 	}
-	todo, err := h.usecase.Create(req.Title)
+	todo, err := h.usecase.Create(c.Request.Context(), req.Title)
 	if err != nil {
 		c.Error(err)
 		return

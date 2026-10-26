@@ -23,8 +23,8 @@ type mockTodoUsecase struct {
 	mock.Mock
 }
 
-func (m *mockTodoUsecase) Create(title string) (*domain.Todo, error) {
-	args := m.Called(title)
+func (m *mockTodoUsecase) Create(ctx context.Context, title string) (*domain.Todo, error) {
+	args := m.Called(ctx, title)
 
 	var todo *domain.Todo
 	if args.Get(0) != nil {
@@ -43,7 +43,7 @@ func TestTodoHandler_Create(t *testing.T) {
 	c.Request.Header.Set("Content-Type", "application/json")
 
 	mockUc := new(mockTodoUsecase)
-	mockUc.On("Create", title).Return(nil, domain.ErrInvalidTitle)
+	mockUc.On("Create", mock.Anything, title).Return(nil, domain.ErrInvalidTitle)
 
 	h := handler.NewTodoHandler(mockUc)
 

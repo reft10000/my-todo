@@ -16,11 +16,12 @@ import (
 func TestTodoRepository_Create(t *testing.T) {
 	client := SetupTestDB(t)
 	repo := mysql.NewTodoRepository(client)
+	ctx := context.Background()
 
 	todo, err := domain.NewTodo("買い物")
 	assert.NoError(t, err)
 
-	err = repo.Create(todo)
+	err = repo.Create(ctx, todo)
 	assert.NoError(t, err)
 }
 
@@ -33,7 +34,7 @@ func TestTodoRepository_List(t *testing.T) {
 	for _, title := range titles {
 		todo, err := domain.NewTodo(title)
 		require.NoError(t, err)
-		err = repo.Create(todo)
+		err = repo.Create(ctx, todo)
 		require.NoError(t, err)
 	}
 
@@ -54,7 +55,7 @@ func TestTodoRepository_FindByID(t *testing.T) {
 
 	todo, err := domain.NewTodo("買い物")
 	require.NoError(t, err)
-	require.NoError(t, repo.Create(todo))
+	require.NoError(t, repo.Create(ctx, todo))
 
 	t.Run("正常系", func(t *testing.T) {
 		got, err := repo.FindByID(ctx, todo.ID)
@@ -79,7 +80,7 @@ func TestTodoRepository_Update(t *testing.T) {
 
 	todo, err := domain.NewTodo("買い物")
 	require.NoError(t, err)
-	require.NoError(t, repo.Create(todo))
+	require.NoError(t, repo.Create(ctx, todo))
 
 	t.Run("正常系", func(t *testing.T) {
 		require.NoError(t, todo.ChangeTitle("掃除"))
@@ -110,7 +111,7 @@ func TestTodoRepository_Delete(t *testing.T) {
 
 	todo, err := domain.NewTodo("買い物")
 	require.NoError(t, err)
-	require.NoError(t, repo.Create(todo))
+	require.NoError(t, repo.Create(ctx, todo))
 
 	t.Run("正常系", func(t *testing.T) {
 		err := repo.Delete(ctx, todo.ID)

@@ -13,7 +13,7 @@ import (
 )
 
 type mockTodoRepository struct {
-	CreateFunc   func(todo *domain.Todo) error
+	CreateFunc   func(ctx context.Context, todo *domain.Todo) error
 	ListFunc     func(ctx context.Context, params domain.ListParams) (domain.ListResult[domain.Todo], error)
 	FindByIDFunc func(ctx context.Context, id uuid.UUID) (*domain.Todo, error)
 	UpdateFunc   func(ctx context.Context, todo *domain.Todo) error
@@ -28,8 +28,8 @@ func (m *mockTodoRepository) Update(ctx context.Context, todo *domain.Todo) erro
 	return m.UpdateFunc(ctx, todo)
 }
 
-func (m *mockTodoRepository) Create(todo *domain.Todo) error {
-	return m.CreateFunc(todo)
+func (m *mockTodoRepository) Create(ctx context.Context, todo *domain.Todo) error {
+	return m.CreateFunc(ctx, todo)
 }
 
 func (m *mockTodoRepository) List(ctx context.Context, params domain.ListParams) (domain.ListResult[domain.Todo], error) {
@@ -55,12 +55,12 @@ func TestTodoUsecase_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := &mockTodoRepository{
-				CreateFunc: func(todo *domain.Todo) error {
+				CreateFunc: func(ctx context.Context, todo *domain.Todo) error {
 					return tt.repoErr
 				},
 			}
 			uc := usecase.NewTodoUsecase(repo)
-			todo, err := uc.Create(tt.title)
+			todo, err := uc.Create(context.Background(), tt.title)
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, todo)

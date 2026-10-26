@@ -20,14 +20,14 @@ func NewTodoRepository(client *ent.Client) *TodoRepository {
 	return &TodoRepository{client: client}
 }
 
-func (r *TodoRepository) Create(todo *domain.Todo) error {
+func (r *TodoRepository) Create(ctx context.Context, todo *domain.Todo) error {
 	_, err := r.client.Todo.
 		Create().
 		SetID(todo.ID).
 		SetTitle(todo.Title).
 		SetStatus(ent_todo.Status(todo.Status)).
 		SetCreatedAt(todo.CreatedAt).
-		Save(context.Background())
+		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create todo: %w", err)
 	}
