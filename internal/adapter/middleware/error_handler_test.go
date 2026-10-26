@@ -23,6 +23,7 @@ func TestErrorHandler(t *testing.T) {
 		{"AppError 400", domain.ErrBadRequest, 400},
 		{"AppErrorのCodeを使う", &domain.AppError{Code: http.StatusNotFound, Message: "not found"}, 404},
 		{"wrapされたAppError", fmt.Errorf("wrap: %w", domain.ErrInvalidTitle), 400},
+		{"ErrNotFound 404", domain.ErrNotFound, 404},
 		{"unknown error", errors.New("unknown"), 500},
 	}
 
